@@ -1,0 +1,15 @@
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+button, input {
+    width: 30px;
+}
+
+input {
+    text-align: center;
+    user-select: none;
+}
