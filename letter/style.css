@@ -1,15 +1,76 @@
 body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
+    background-color: brown;
 }
 
 button, input {
     width: 30px;
+    height: 30px;
+    margin: 0.5px;
+    padding: 0.5px;
+}
+
+button {
+    border-radius: 15px;
+    border: none;
+}
+button:hover {
+    background-color: lightcoral;
 }
 
 input {
     text-align: center;
     user-select: none;
+}
+
+#evelope {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    height: 500px;
+    background-repeat: no-repeat;
+    background-image:url("evelope.png");
+}
+
+.lock {
+    max-width: 300px;
+    display: flex;
+    flex-direction: row;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    background-repeat: no-repeat;
+    background-size: 100%;
+    background-image:url("evelope.png");
+    -webkit-border-radius: 15px;
+    -moz-border-radius: 15px;
+    border-radius: 15px;
+    border: none;
+    padding: 70 120;
+}
+
+.row0 {
+    max-width: 50px;
+    display: flex;
+    flex-direction: column;
+}
+.row1 {
+    max-width: 50px;
+    display: flex;
+    flex-direction: column;
+}
+
+.row2 {
+    max-width: 50px;
+    display: flex;
+    flex-direction: column;
+}
+
+.row3 {
+    max-width: 50px;
+    display: flex;
+    flex-direction: column;
 }
