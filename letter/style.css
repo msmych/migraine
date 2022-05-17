@@ -1,5 +1,5 @@
 body {
-    background-color: brown;
+    background-color: #282727;
 }
 
 button, input {
@@ -13,8 +13,9 @@ button {
     border-radius: 15px;
     border: none;
 }
+
 button:hover {
-    background-color: lightcoral;
+    cursor: pointer;
 }
 
 input {
@@ -52,24 +53,7 @@ input {
     padding: 70 120;
 }
 
-.row0 {
-    max-width: 50px;
-    display: flex;
-    flex-direction: column;
-}
-.row1 {
-    max-width: 50px;
-    display: flex;
-    flex-direction: column;
-}
-
-.row2 {
-    max-width: 50px;
-    display: flex;
-    flex-direction: column;
-}
-
-.row3 {
+.digit-block {
     max-width: 50px;
     display: flex;
     flex-direction: column;

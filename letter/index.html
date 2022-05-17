@@ -1,27 +1,30 @@
 <head>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/x-icon" href="favicon.png">
 </head>
 
 <!-- <div id="evelope"></div> -->
 <div class="lock">
-    <div class="row0">
-        <button>↑</button>
-        <input value="1" maxlength="1">
-        <button>↓</button>
+    <div class="digit-block">
+        <button onclick="increment(0)">↑</button>
+        <input id="d0" value="5" maxlength="1" disabled>
+        <button onclick="decrement(0)">↓</button>
     </div>
-    <div class="row1">
-        <button>↑</button>
-        <input value="1" maxlength="1">
-        <button>↓</button>
+    <div class="digit-block">
+        <button onclick="increment(1)">↑</button>
+        <input id="d1" value="5" maxlength="1" disabled>
+        <button onclick="decrement(1)">↓</button>
     </div>
-    <div class="row2">
-        <button>↑</button>
-        <input value="1" maxlength="1">
-        <button>↓</button>
+    <div class="digit-block">
+        <button onclick="increment(2)">↑</button>
+        <input id="d2" value="5" maxlength="1" disabled>
+        <button onclick="decrement(2)">↓</button>
     </div>
-    <div class="row3">
-        <button>↑</button>
-        <input value="1" maxlength="1">
-        <button>↓</button>
+    <div class="digit-block">
+        <button onclick="increment(3)">↑</button>
+        <input id="d3" value="5" maxlength="1" disabled>
+        <button onclick="decrement(3)">↓</button>
     </div>
 </div>
+
+<script src="script.js"></script>
