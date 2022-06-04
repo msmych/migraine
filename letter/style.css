@@ -54,3 +54,17 @@ input {
 .letter {
     display: none;
 }
+
+footer {
+    display: flex;
+    justify-content: flex-end;
+    position: fixed;
+    width: 100%;
+    left: 0;
+    bottom: 0;
+    background-color: #383838;
+}
+
+footer > p {
+    margin-right: 20;
+}
