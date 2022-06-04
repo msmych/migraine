@@ -1,5 +1,6 @@
 body {
     background-color: #282727;
+    font-family: 'IBM Plex Serif';
 }
 
 button, input {
@@ -20,18 +21,9 @@ button:hover {
 
 input {
     text-align: center;
+    font-family: inherit;
+    font-size: 18;
     user-select: none;
-}
-
-#evelope {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    -webkit-transform: translate(-50%, -50%);
-    transform: translate(-50%, -50%);
-    height: 500px;
-    background-repeat: no-repeat;
-    background-image:url("evelope.png");
 }
 
 .lock {
@@ -45,7 +37,7 @@ input {
     transform: translate(-50%, -50%);
     background-repeat: no-repeat;
     background-size: 100%;
-    background-image:url("evelope.png");
+    background-image: url("evelope.png");
     -webkit-border-radius: 15px;
     -moz-border-radius: 15px;
     border-radius: 15px;
@@ -57,4 +49,8 @@ input {
     max-width: 50px;
     display: flex;
     flex-direction: column;
+}
+
+.letter {
+    display: none;
 }

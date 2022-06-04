@@ -1,8 +1,8 @@
 const a = [];
-const y1 = [1, 9, 8, 4];
-const h1 = ['t', 'y', 'p', 'e'];
-const y2 = [2, 0, 1, 3];
-const h2 = ['j', 'u', 'n', 'k'];
+const y1 = [1, 7, 8, 9];
+const h1 = ['T', 'Y', 'P', 'E'];
+const y2 = [2, 0, 4, 2];
+const h2 = ['J', 'U', 'N', 'K'];
 
 function increment(i) {
     let v = realValue(i);
@@ -46,8 +46,8 @@ document.addEventListener('keydown', e => {
     if (a.length > 4) {
         a.shift();
     }
-    console.log(a);
-    if (a.join('') === h2.join('')) {
-        alert('Good job!');
+    if (a.join('').toLowerCase() === h2.join('').toLowerCase()) {
+        document.getElementsByClassName('lock')[0].style.display = 'none';
+        document.getElementsByClassName('letter')[0].style.display = 'block';
     }
 })
