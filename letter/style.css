@@ -54,6 +54,10 @@ input {
 .letter {
     display: none;
     color: white;
+    width: 60%;
+    text-align: justify;
+    padding-top: 80;
+    margin: auto;
 }
 
 footer {
