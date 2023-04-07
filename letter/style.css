@@ -37,7 +37,7 @@ input {
     transform: translate(-50%, -50%);
     background-repeat: no-repeat;
     background-size: 100%;
-    background-image: url("evelope.png");
+    background-image: url("envelope.png");
     -webkit-border-radius: 15px;
     -moz-border-radius: 15px;
     border-radius: 15px;
