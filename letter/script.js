@@ -5,7 +5,6 @@ const y2 = [2, 0, 4, 2];
 const h2 = ['J', 'U', 'N', 'K'];
 
 function increment(i) {
-    alert(navigator.userAgent)
     let v = realValue(i);
     if (v == 9) {
         v = 0;
@@ -22,7 +21,7 @@ function decrement(i) {
     } else {
         v--;
     }
-    document.getElementById('d' + i).setAttribute('value', formattedValue(i, v) );
+    document.getElementById('d' + i).setAttribute('value', formattedValue(i, v));
 }
 
 function realValue(i) {
@@ -48,7 +47,12 @@ document.addEventListener('keydown', e => {
         a.shift();
     }
     if (a.join('').toLowerCase() === h2.join('').toLowerCase()) {
-        document.getElementsByClassName('lock')[0].style.display = 'none';
+        document.getElementsByClassName('envelope')[0].style.display = 'none';
         document.getElementsByClassName('letter')[0].style.display = 'block';
     }
 })
+
+if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/.test(navigator.userAgent)) {
+    document.getElementsByClassName('lock')[0].style.display = 'none';
+    document.getElementsByClassName('mobile-alert')[0].style.display = 'block';
+}

@@ -26,7 +26,7 @@ input {
     user-select: none;
 }
 
-.enevelope {
+.envelope {
     max-width: 300px;
     display: flex;
     /* flex-direction: row; */
@@ -46,7 +46,6 @@ input {
 }
 
 .mobile-alert {
-    display: none;
 }
 
 .lock {
