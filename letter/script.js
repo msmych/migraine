@@ -5,6 +5,7 @@ const y2 = [2, 0, 4, 2];
 const h2 = ['J', 'U', 'N', 'K'];
 
 function increment(i) {
+    alert(navigator.userAgent)
     let v = realValue(i);
     if (v == 9) {
         v = 0;
