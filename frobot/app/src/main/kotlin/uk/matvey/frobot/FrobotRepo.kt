@@ -2,11 +2,13 @@ package uk.matvey.frobot
 
 import org.jooq.generated.Tables.FROBOT
 import org.jooq.generated.tables.records.FrobotRecord
+import uk.matvey.frobot.Frobot.BatteryLevel
+import uk.matvey.frobot.Frobot.Id
 import uk.matvey.persistence.AuditedEntityRepo
 import uk.matvey.persistence.JooqRepo
 import java.util.UUID
 
-class FrobotRepo(jooqRepo: JooqRepo) : AuditedEntityRepo<Frobot.Id, Frobot, UUID, FrobotRecord>(
+class FrobotRepo(jooqRepo: JooqRepo) : AuditedEntityRepo<Id, Frobot, UUID, FrobotRecord>(
     jooqRepo, FROBOT, FROBOT.ID, FROBOT.UPDATED_AT
 ) {
 
@@ -23,8 +25,8 @@ class FrobotRepo(jooqRepo: JooqRepo) : AuditedEntityRepo<Frobot.Id, Frobot, UUID
             id.value,
             userId,
             batteryLevel.name,
-            lotusPondMessageId?.toLong(),
-            lotusPondBoard?.serialize(),
+            rockGardenMessageId?.toLong(),
+            rockGardenBoard?.serialize(),
             createdAt,
             updatedAt
         )
@@ -32,11 +34,11 @@ class FrobotRepo(jooqRepo: JooqRepo) : AuditedEntityRepo<Frobot.Id, Frobot, UUID
 
     override fun FrobotRecord.toEntity(): Frobot {
         return Frobot(
-            Frobot.Id(getId()),
+            Id(getId()),
             userId,
-            Frobot.BatteryLevel.valueOf(batteryLevel),
-            lotusPondMessageId?.toInt(),
-            lotusPondBoard?.let(LotusPondBoard::fromString),
+            BatteryLevel.valueOf(batteryLevel),
+            rockGardenMessageId?.toInt(),
+            rockGardenBoard?.let(RockGardenBoard::fromString),
             getCreatedAt(),
             getUpdatedAt()
         )

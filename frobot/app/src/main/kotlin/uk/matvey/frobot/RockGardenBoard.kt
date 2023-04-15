@@ -2,15 +2,15 @@ package uk.matvey.frobot
 
 import com.pengrad.telegrambot.model.request.InlineKeyboardButton
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup
-import uk.matvey.frobot.LotusPondCell.Frobot
-import uk.matvey.frobot.LotusPondCell.Lotus
+import uk.matvey.frobot.RockGardenCell.Frog
+import uk.matvey.frobot.RockGardenCell.Rock
 
-class LotusPondBoard(private val cells: List<List<LotusPondCell>>) {
+class RockGardenBoard(private val cells: List<List<RockGardenCell>>) {
 
-    fun move(i: Int, j: Int): LotusPondBoard {
+    fun move(i: Int, j: Int): RockGardenBoard {
         return if (isReachableRock(i, j)) {
             val arr = fromString(this.serialize().replace('b', 'f')).cells.map { it.toTypedArray() }.toTypedArray()
-            arr[i][j] = Frobot
+            arr[i][j] = Frog
             return fromString(arr.joinToString(separator = "") { row -> row.joinToString(separator = "") { it.symbol.toString() } })
         } else {
             this
@@ -32,7 +32,7 @@ class LotusPondBoard(private val cells: List<List<LotusPondCell>>) {
 
     private fun isReachableRock(i: Int, j: Int): Boolean {
         return when (cells[i][j]) {
-            is Lotus -> {
+            is Rock -> {
                 listOfNotNull(
                     cells.getOrNull(i + 1)?.getOrNull(j + 2),
                     cells.getOrNull(i + 2)?.getOrNull(j + 1),
@@ -42,7 +42,7 @@ class LotusPondBoard(private val cells: List<List<LotusPondCell>>) {
                     cells.getOrNull(i - 2)?.getOrNull(j - 1),
                     cells.getOrNull(i - 2)?.getOrNull(j + 1),
                     cells.getOrNull(i - 1)?.getOrNull(j + 2),
-                ).any { it is Frobot }
+                ).any { it is Frog }
             }
             else -> false
         }
@@ -50,10 +50,10 @@ class LotusPondBoard(private val cells: List<List<LotusPondCell>>) {
 
     companion object {
 
-        fun fromString(s: String): LotusPondBoard {
-            return LotusPondBoard(
+        fun fromString(s: String): RockGardenBoard {
+            return RockGardenBoard(
                 s.chunked(8).map { row ->
-                    row.toCharArray().map(LotusPondCell::fromSymbol)
+                    row.toCharArray().map(RockGardenCell::fromSymbol)
                 }
             )
         }

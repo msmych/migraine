@@ -10,32 +10,31 @@ import com.pengrad.telegrambot.request.SendMessage
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import uk.matvey.frobot.Frobot.BatteryLevel.HIGH
-import uk.matvey.frobot.Frobot.BatteryLevel.LOW
+import uk.matvey.frobot.Frobot.Companion.frobot
 import uk.matvey.frobot.FrobotState.BATTERY_LOW
-import uk.matvey.frobot.FrobotState.FIRE_ROCKS
+import uk.matvey.frobot.FrobotState.ROCK_GARDEN
 import uk.matvey.frobot.TelegramBotSupport.messageText
 import uk.matvey.frobot.TelegramBotSupport.user
 import uk.matvey.persistence.JooqRepo
-import java.time.Instant.now
-import java.util.UUID.randomUUID
+import java.util.concurrent.ThreadLocalRandom
 
-class App {
-    val greeting: String
-        get() {
-            return "Hello World!"
-        }
-}
+private val INSECTS = setOf("🦋", "🐝", "🐞", "🐜", "🦟", "🪰")
+private val ERROR_SYNONYMS = setOf("disaster", "catastrophe", "meltdown", "flop", "shipwreck")
+private const val LANG_MODULE_FAILED = "🐸 Pozor! Language module квакнулся. La localizzazione potrebbe 멈추다."
 
 fun main() {
-    println(App().greeting)
+    val frobotDbUser = System.getenv("FROBOT_DB_USER")
+    val frobotDbPassword = System.getenv("FROBOT_DB_PASSWORD")
+    val frobotDbName = System.getenv("FROBOT_DB_NAME")
+    val frobotDbHost = System.getenv("FROBOT_DB_HOST")
 
-    val bot = TelegramBot("")
+    val bot = TelegramBot(System.getenv("FROBOT_TG_BOT_TOKEN"))
 
     val jooqRepo = JooqRepo(
         HikariDataSource(HikariConfig().apply {
-            jdbcUrl = "jdbc:postgresql://localhost:55000/postgres"
-            username = "postgres"
-            password = "postgres"
+            jdbcUrl = "jdbc:postgresql://$frobotDbHost/$frobotDbName"
+            username = frobotDbUser
+            password = frobotDbPassword
             driverClassName = "org.postgresql.Driver"
         })
     )
@@ -48,10 +47,10 @@ fun main() {
             try {
                 val userId = update.user().id()
 
-                val frobot = frobotRepo.findBy(userId) ?: frobotRepo.add(Frobot(Frobot.Id(randomUUID()), userId, LOW, null, null, now(), now()))
+                val frobot = frobotRepo.findBy(userId) ?: frobotRepo.add(frobot(userId))
                 when (frobotStateResolver.resolveState(frobot)) {
                     BATTERY_LOW -> {
-                        if (update.messageText() == "🦟") {
+                        if (update.messageText() in INSECTS) {
                             frobotRepo.update(frobot.copy(batteryLevel = HIGH))
                             bot.execute(SendMessage(userId, "🐸 Yummy!"))
                             bot.execute(SendMessage(userId, "🔋"))
@@ -59,31 +58,41 @@ fun main() {
                             bot.execute(SendMessage(userId, "🪫"))
                         }
                     }
-                    FIRE_ROCKS -> {
+                    ROCK_GARDEN -> {
                         if (update.messageText() == "/jump") {
-                            frobot.lotusPondMessageId?.let { messageId ->
+                            frobot.rockGardenMessageId?.let { messageId ->
                                 bot.execute(EditMessageReplyMarkup(userId, messageId).replyMarkup(InlineKeyboardMarkup()))
                                 bot.execute(EditMessageText(userId, messageId, "🔥"))
                             }
-                            val initialBoard = LotusPondBoard.fromString("""
-                                blllllll
-                                llllllll
-                                llllllll
-                                llllllll
-                                llllllll
-                                llllllll
-                                llllllll
-                                llllllll
+                            val initialBoard = RockGardenBoard.fromString("""
+                                brrrrrrr
+                                rrrrrrrr
+                                rrrrrrrr
+                                rrrrrrrr
+                                rrrrrrrr
+                                rrrrrrrr
+                                rrrrrrrr
+                                rrrrrrrr
                             """.trimIndent().replace("\n", ""))
-                            val result = bot.execute(SendMessage(userId, "🐸 Let's go!")
+                            val result = bot.execute(SendMessage(userId, "🐸 What a wonderful rock garden!")
                                 .replyMarkup(initialBoard.toInlineKeyboard()))
-                            frobotRepo.update(frobot.copy(lotusPondMessageId = result.message().messageId(), lotusPondBoard = initialBoard))
+                            frobotRepo.update(frobot.copy(rockGardenMessageId = result.message().messageId(), rockGardenBoard = initialBoard))
                         } else if (update.callbackQuery() != null) {
                             val data = update.callbackQuery().data()
-                            val updatedBoard = frobot.fireRocksBoard().move(data[0].digitToInt(), data[1].digitToInt())
-                            frobotRepo.update(frobot.copy(lotusPondBoard = updatedBoard))
-                            bot.execute(EditMessageReplyMarkup(userId, update.callbackQuery().message().messageId())
-                                .replyMarkup(updatedBoard.toInlineKeyboard()))
+                            val updatedBoard = frobot.rockGardenBoard().move(data[0].digitToInt(), data[1].digitToInt())
+                            if (updatedBoard != frobot.rockGardenBoard) {
+                                frobotRepo.update(frobot.copy(rockGardenBoard = updatedBoard))
+                                val message = update.callbackQuery().message()
+                                bot.execute(EditMessageReplyMarkup(userId, message.messageId())
+                                    .replyMarkup(updatedBoard.toInlineKeyboard()))
+                                if (ThreadLocalRandom.current().nextInt() % 32 == 0) {
+                                    bot.execute(EditMessageText(
+                                        userId,
+                                        message.messageId(),
+                                        message.text() + "\n🐸 NULL POINTER ${ERROR_SYNONYMS.random().uppercase()}"
+                                    ).replyMarkup(updatedBoard.toInlineKeyboard()))
+                                }
+                            }
                             bot.execute(AnswerCallbackQuery(update.callbackQuery().id()))
                         }
                     }

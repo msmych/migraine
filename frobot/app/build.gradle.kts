@@ -24,6 +24,12 @@ val jupiterVersion: String by project
 val mockkVersion: String by project
 val assertJVersion: String by project
 
+val frobotDbUser = System.getenv("FROBOT_DB_USER")
+val frobotDbPassword = System.getenv("FROBOT_DB_PASSWORD")
+val frobotDbName = System.getenv("FROBOT_DB_NAME")
+val frobotDbPort = System.getenv("FROBOT_DB_PORT").toInt()
+val frobotDbUrl = "jdbc:postgresql://localhost:$frobotDbPort/$frobotDbName"
+
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
     implementation("org.postgresql:postgresql:$postgresVersion")
@@ -39,21 +45,21 @@ dependencies {
 dockerRun {
     name = "frobot-pg"
     image = "postgres:latest"
-    ports("55000:5432")
+    ports("$frobotDbPort:5432")
     daemonize = true
-    env(mapOf("POSTGRES_USER" to "postgres", "POSTGRES_PASSWORD" to "postgres", "POSTGRES_DB" to "postgres"))
+    env(mapOf("POSTGRES_USER" to frobotDbUser, "POSTGRES_PASSWORD" to frobotDbPassword, "POSTGRES_DB" to frobotDbName))
 }
 
 tasks.dockerRun {
     onlyIf {
-        !portIsInUse(55000)
+        !portIsInUse(frobotDbPort)
     }
 }
 
 flyway {
-    url = "jdbc:postgresql://localhost:55000/postgres"
-    user = "postgres"
-    password = "postgres"
+    url = frobotDbUrl
+    user = frobotDbUser
+    password = frobotDbPassword
     schemas = arrayOf("public")
     locations = arrayOf("filesystem:${projectDir.absolutePath}/src/main/resources/db/migration")
 }
@@ -71,9 +77,9 @@ jooq {
             jooqConfiguration.apply {
                 jdbc.apply {
                     driver = "org.postgresql.Driver"
-                    url = "jdbc:postgresql://localhost:55000/postgres"
-                    user = "postgres"
-                    password = "postgres"
+                    url = frobotDbUrl
+                    user = frobotDbUser
+                    password = frobotDbPassword
                 }
                 generator.apply {
                     database.apply {
@@ -109,7 +115,7 @@ tasks.getByName("generateJooq") {
 
 tasks.dockerStop {
     onlyIf {
-        portIsInUse(55000)
+        portIsInUse(frobotDbPort)
     }
 }
 
