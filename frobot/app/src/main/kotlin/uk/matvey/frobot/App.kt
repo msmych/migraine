@@ -3,6 +3,7 @@ package uk.matvey.frobot
 import com.pengrad.telegrambot.TelegramBot
 import com.pengrad.telegrambot.UpdatesListener.CONFIRMED_UPDATES_ALL
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup
+import com.pengrad.telegrambot.model.request.ParseMode.MarkdownV2
 import com.pengrad.telegrambot.request.AnswerCallbackQuery
 import com.pengrad.telegrambot.request.EditMessageReplyMarkup
 import com.pengrad.telegrambot.request.EditMessageText
@@ -20,8 +21,7 @@ import uk.matvey.persistence.JooqRepo
 import java.util.concurrent.ThreadLocalRandom
 
 private val INSECTS = setOf("🦋", "🐝", "🐞", "🐜", "🦟", "🪰")
-private val ERROR_SYNONYMS = setOf("disaster", "catastrophe", "meltdown", "flop", "shipwreck")
-private const val LANG_MODULE_FAILED = "🐸 Pozor! Language module квакнулся. La localizzazione potrebbe 멈추다."
+private val ERROR_SYNONYMS = setOf("disaster", "catastrophe", "meltdown", "flop", "shipwreck", "epic fail")
 
 private val log = KotlinLogging.logger {}
 
@@ -65,7 +65,7 @@ fun main() {
                         if (update.messageText() == "/jump") {
                             frobot.rockGardenMessageId?.let { messageId ->
                                 bot.execute(EditMessageReplyMarkup(userId, messageId).replyMarkup(InlineKeyboardMarkup()))
-                                bot.execute(EditMessageText(userId, messageId, "🛟"))
+                                bot.execute(EditMessageText(userId, messageId, "🧯"))
                             }
                             val initialBoard = RockGardenBoard.fromString("""
                                 brrrrrrr
@@ -77,8 +77,8 @@ fun main() {
                                 rrrrrrrr
                                 rrrrrrrr
                             """.trimIndent().replace("\n", ""))
-                            val result = bot.execute(SendMessage(userId, "🐸 What a wonderful rock garden!")
-                                .replyMarkup(initialBoard.toInlineKeyboard()))
+                            val result = bot.execute(SendMessage(userId, "🐸 What a beautiful rock garden\\!")
+                                .replyMarkup(initialBoard.toInlineKeyboard()).parseMode(MarkdownV2))
                             frobotRepo.update(frobot.copy(rockGardenMessageId = result.message().messageId(), rockGardenBoard = initialBoard))
                         } else if (update.callbackQuery() != null) {
                             val data = update.callbackQuery().data()
@@ -88,12 +88,20 @@ fun main() {
                                 val message = update.callbackQuery().message()
                                 bot.execute(EditMessageReplyMarkup(userId, message.messageId())
                                     .replyMarkup(updatedBoard.toInlineKeyboard()))
-                                if (ThreadLocalRandom.current().nextInt() % 32 == 0) {
-                                    bot.execute(EditMessageText(
-                                        userId,
-                                        message.messageId(),
-                                        message.text() + "\n🐸 NULL POINTER ${ERROR_SYNONYMS.random().uppercase()}"
-                                    ).replyMarkup(updatedBoard.toInlineKeyboard()))
+                                when (updatedBoard.serialize().count { it == 'f' }) {
+                                    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 -> null
+                                    12 -> "Huh it's getting kinda hot here"
+                                    28 -> "❗️ Seriously, it's too hot here"
+                                    48 -> "❗️ Man it's hot"
+                                    56 -> "⚠️ Pozor! Language module квакнулся. La localizzazione potrebbe 멈추다"
+                                    60 -> "‼️️ Danger ‼️ Critical overheat"
+                                    62 -> "Oh look! There's a map over there!"
+                                    else -> "⚠️ NULL POINTER ${ERROR_SYNONYMS.random().uppercase()}"
+                                        .takeIf { ThreadLocalRandom.current().nextInt() % 24 == 0 }
+                                }?.let { logMessage ->
+                                    bot.execute(EditMessageText(userId, message.messageId(), message.text().replace("!", "\\!") + "\n🐸 $logMessage")
+                                        .replyMarkup(updatedBoard.toInlineKeyboard())
+                                        .parseMode(MarkdownV2))
                                 }
                             }
                             bot.execute(AnswerCallbackQuery(update.callbackQuery().id()))
