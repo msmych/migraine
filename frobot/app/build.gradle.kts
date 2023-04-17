@@ -20,15 +20,11 @@ val kotlinxSerializationVersion: String by project
 val postgresVersion: String by project
 val hikariCpVersion: String by project
 val telegramBotApiVersion: String by project
+val logbackVersion: String by project
+val kotlinLoggingVersion: String by project
 val jupiterVersion: String by project
 val mockkVersion: String by project
 val assertJVersion: String by project
-
-val frobotDbUser = System.getenv("FROBOT_DB_USER")
-val frobotDbPassword = System.getenv("FROBOT_DB_PASSWORD")
-val frobotDbName = System.getenv("FROBOT_DB_NAME")
-val frobotDbPort = System.getenv("FROBOT_DB_PORT").toInt()
-val frobotDbUrl = "jdbc:postgresql://localhost:$frobotDbPort/$frobotDbName"
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
@@ -36,6 +32,8 @@ dependencies {
     jooqGenerator("org.postgresql:postgresql:$postgresVersion")
     implementation("com.zaxxer:HikariCP:$hikariCpVersion")
     implementation("com.github.pengrad:java-telegram-bot-api:$telegramBotApiVersion")
+    implementation("ch.qos.logback:logback-classic:$logbackVersion")
+    implementation("io.github.microutils:kotlin-logging:$kotlinLoggingVersion")
 
     testImplementation("org.junit.jupiter:junit-jupiter-engine:$jupiterVersion")
     testImplementation("io.mockk:mockk:$mockkVersion")
@@ -45,21 +43,21 @@ dependencies {
 dockerRun {
     name = "frobot-pg"
     image = "postgres:latest"
-    ports("$frobotDbPort:5432")
+    ports("55000:5432")
     daemonize = true
-    env(mapOf("POSTGRES_USER" to frobotDbUser, "POSTGRES_PASSWORD" to frobotDbPassword, "POSTGRES_DB" to frobotDbName))
+    env(mapOf("POSTGRES_USER" to "postgres", "POSTGRES_PASSWORD" to "postgres", "POSTGRES_DB" to "postgres"))
 }
 
 tasks.dockerRun {
     onlyIf {
-        !portIsInUse(frobotDbPort)
+        !portIsInUse(55000)
     }
 }
 
 flyway {
-    url = frobotDbUrl
-    user = frobotDbUser
-    password = frobotDbPassword
+    url = "jdbc:postgresql://localhost:55000/postgres"
+    user = "postgres"
+    password = "postgres"
     schemas = arrayOf("public")
     locations = arrayOf("filesystem:${projectDir.absolutePath}/src/main/resources/db/migration")
 }
@@ -77,9 +75,9 @@ jooq {
             jooqConfiguration.apply {
                 jdbc.apply {
                     driver = "org.postgresql.Driver"
-                    url = frobotDbUrl
-                    user = frobotDbUser
-                    password = frobotDbPassword
+                    url = "jdbc:postgresql://localhost:55000/postgres"
+                    user = "postgres"
+                    password = "postgres"
                 }
                 generator.apply {
                     database.apply {
@@ -115,7 +113,7 @@ tasks.getByName("generateJooq") {
 
 tasks.dockerStop {
     onlyIf {
-        portIsInUse(frobotDbPort)
+        portIsInUse(55000)
     }
 }
 

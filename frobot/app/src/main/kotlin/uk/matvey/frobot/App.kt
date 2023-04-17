@@ -9,6 +9,7 @@ import com.pengrad.telegrambot.request.EditMessageText
 import com.pengrad.telegrambot.request.SendMessage
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import mu.KotlinLogging
 import uk.matvey.frobot.Frobot.BatteryLevel.HIGH
 import uk.matvey.frobot.Frobot.Companion.frobot
 import uk.matvey.frobot.FrobotState.BATTERY_LOW
@@ -21,6 +22,8 @@ import java.util.concurrent.ThreadLocalRandom
 private val INSECTS = setOf("🦋", "🐝", "🐞", "🐜", "🦟", "🪰")
 private val ERROR_SYNONYMS = setOf("disaster", "catastrophe", "meltdown", "flop", "shipwreck")
 private const val LANG_MODULE_FAILED = "🐸 Pozor! Language module квакнулся. La localizzazione potrebbe 멈추다."
+
+private val log = KotlinLogging.logger {}
 
 fun main() {
     val frobotDbUser = System.getenv("FROBOT_DB_USER")
@@ -43,7 +46,7 @@ fun main() {
 
     bot.setUpdatesListener { updates ->
         updates.forEach { update ->
-            println(update)
+            log.info { update }
             try {
                 val userId = update.user().id()
 
@@ -62,7 +65,7 @@ fun main() {
                         if (update.messageText() == "/jump") {
                             frobot.rockGardenMessageId?.let { messageId ->
                                 bot.execute(EditMessageReplyMarkup(userId, messageId).replyMarkup(InlineKeyboardMarkup()))
-                                bot.execute(EditMessageText(userId, messageId, "🔥"))
+                                bot.execute(EditMessageText(userId, messageId, "🛟"))
                             }
                             val initialBoard = RockGardenBoard.fromString("""
                                 brrrrrrr
@@ -98,7 +101,7 @@ fun main() {
                     }
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                log.error(e) { "Failed to process $update" }
             }
         }
         CONFIRMED_UPDATES_ALL
