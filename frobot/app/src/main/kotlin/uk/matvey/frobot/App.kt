@@ -14,14 +14,25 @@ import mu.KotlinLogging
 import uk.matvey.frobot.Frobot.BatteryLevel.HIGH
 import uk.matvey.frobot.Frobot.Companion.frobot
 import uk.matvey.frobot.FrobotState.BATTERY_LOW
+import uk.matvey.frobot.FrobotState.OVERHEAT
 import uk.matvey.frobot.FrobotState.ROCK_GARDEN
+import uk.matvey.frobot.RockGardenCell.TreasureMap
 import uk.matvey.frobot.TelegramBotSupport.messageText
 import uk.matvey.frobot.TelegramBotSupport.user
 import uk.matvey.persistence.JooqRepo
 import java.util.concurrent.ThreadLocalRandom
 
 private val INSECTS = setOf("🦋", "🐝", "🐞", "🐜", "🦟", "🪰")
-private val ERROR_SYNONYMS = setOf("disaster", "catastrophe", "meltdown", "flop", "shipwreck", "epic fail")
+private val NULL_POINTER_MESSAGES = setOf(
+    "Null Pointer Disaster",
+    "Null Pointer Catastrophe",
+    "Epic Null Pointer Fail",
+    "Null Pointer Misery",
+    "Null Pointer Trouble",
+    "Null Pointer Death",
+    "Null Pointer Explosion",
+    "Null Pointer Fiasco",
+)
 
 private val log = KotlinLogging.logger {}
 
@@ -81,32 +92,39 @@ fun main() {
                                 .replyMarkup(initialBoard.toInlineKeyboard()).parseMode(MarkdownV2))
                             frobotRepo.update(frobot.copy(rockGardenMessageId = result.message().messageId(), rockGardenBoard = initialBoard))
                         } else if (update.callbackQuery() != null) {
-                            val data = update.callbackQuery().data()
-                            val updatedBoard = frobot.rockGardenBoard().move(data[0].digitToInt(), data[1].digitToInt())
-                            if (updatedBoard != frobot.rockGardenBoard) {
-                                frobotRepo.update(frobot.copy(rockGardenBoard = updatedBoard))
-                                val message = update.callbackQuery().message()
-                                bot.execute(EditMessageReplyMarkup(userId, message.messageId())
-                                    .replyMarkup(updatedBoard.toInlineKeyboard()))
-                                when (updatedBoard.serialize().count { it == 'f' }) {
-                                    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 -> null
-                                    12 -> "Huh it's getting kinda hot here"
-                                    28 -> "❗️ Seriously, it's too hot here"
-                                    48 -> "❗️ Man it's hot"
-                                    56 -> "⚠️ Pozor! Language module квакнулся. La localizzazione potrebbe 멈추다"
-                                    60 -> "‼️️ Danger ‼️ Critical overheat"
-                                    62 -> "Oh look! There's a map over there!"
-                                    else -> "⚠️ NULL POINTER ${ERROR_SYNONYMS.random().uppercase()}"
-                                        .takeIf { ThreadLocalRandom.current().nextInt() % 24 == 0 }
-                                }?.let { logMessage ->
-                                    bot.execute(EditMessageText(userId, message.messageId(), message.text().replace("!", "\\!") + "\n🐸 $logMessage")
-                                        .replyMarkup(updatedBoard.toInlineKeyboard())
-                                        .parseMode(MarkdownV2))
+                            val (i, j) = update.callbackQuery().data().let { it[0].digitToInt() to it[1].digitToInt() }
+                            val message = update.callbackQuery().message()
+                            if (frobot.rockGardenBoard().cellAt(i, j) is TreasureMap && frobot.rockGardenBoard().isReachableRock(i, j)) {
+                                bot.execute(SendMessage(userId, "☠️ *OVERHEATED*").parseMode(MarkdownV2))
+                                bot.execute(SendMessage(userId, "☠️ *ALL SYSTEMS DOWN*").parseMode(MarkdownV2))
+                                bot.execute(SendMessage(userId, "🔵🔵🔴🟢"))
+                            } else {
+                                val updatedBoard = frobot.rockGardenBoard().move(i, j)
+                                if (updatedBoard != frobot.rockGardenBoard) {
+                                    frobotRepo.update(frobot.copy(rockGardenBoard = updatedBoard))
+                                    bot.execute(EditMessageReplyMarkup(userId, message.messageId())
+                                        .replyMarkup(updatedBoard.toInlineKeyboard()))
+                                    when (updatedBoard.serialize().count { it == 'f' }) {
+                                        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 -> null
+                                        12 -> " Huh it's getting kinda hot here"
+                                        28 -> "❗️ Seriously, it's too hot here"
+                                        48 -> "❗️ Man it's hot"
+                                        56 -> "⚠️ Pozor! Language module квакнулся. La localizzazione potrebbe 멈추다"
+                                        60 -> "‼️️ Danger ‼️ Critical overheat"
+                                        62 -> " Oh look! There's a map over there!"
+                                        else -> "⚠️ ${NULL_POINTER_MESSAGES.random()}"
+                                            .takeIf { ThreadLocalRandom.current().nextInt() % 24 == 0 }
+                                    }?.let { logMessage ->
+                                        bot.execute(EditMessageText(userId, message.messageId(), "${message.text()}\n🐸$logMessage".replace("!", "\\!"))
+                                            .replyMarkup(updatedBoard.toInlineKeyboard())
+                                            .parseMode(MarkdownV2))
+                                    }
                                 }
+                                bot.execute(AnswerCallbackQuery(update.callbackQuery().id()))
                             }
-                            bot.execute(AnswerCallbackQuery(update.callbackQuery().id()))
                         }
                     }
+                    OVERHEAT -> {}
                 }
             } catch (e: Exception) {
                 log.error(e) { "Failed to process $update" }
