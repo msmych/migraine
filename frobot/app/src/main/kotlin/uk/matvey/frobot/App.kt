@@ -11,11 +11,10 @@ import com.pengrad.telegrambot.request.SendMessage
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import mu.KotlinLogging
-import uk.matvey.frobot.Frobot.BatteryLevel.HIGH
 import uk.matvey.frobot.Frobot.Companion.frobot
-import uk.matvey.frobot.FrobotState.BATTERY_LOW
-import uk.matvey.frobot.FrobotState.OVERHEAT
-import uk.matvey.frobot.FrobotState.ROCK_GARDEN
+import uk.matvey.frobot.Frobot.State.ACTIVE
+import uk.matvey.frobot.Frobot.State.BATTERY_LOW
+import uk.matvey.frobot.Frobot.State.OVERHEATED
 import uk.matvey.frobot.RockGardenCell.TreasureMap
 import uk.matvey.frobot.TelegramBotSupport.messageText
 import uk.matvey.frobot.TelegramBotSupport.user
@@ -53,7 +52,6 @@ fun main() {
         })
     )
     val frobotRepo = FrobotRepo(jooqRepo)
-    val frobotStateResolver = FrobotStateResolver()
 
     bot.setUpdatesListener { updates ->
         updates.forEach { update ->
@@ -62,17 +60,17 @@ fun main() {
                 val userId = update.user().id()
 
                 val frobot = frobotRepo.findBy(userId) ?: frobotRepo.add(frobot(userId))
-                when (frobotStateResolver.resolveState(frobot)) {
+                when (frobot.state) {
                     BATTERY_LOW -> {
                         if (update.messageText() in INSECTS) {
-                            frobotRepo.update(frobot.copy(batteryLevel = HIGH))
+                            frobotRepo.update(frobot.copy(state = ACTIVE))
                             bot.execute(SendMessage(userId, "🐸 Yummy!"))
                             bot.execute(SendMessage(userId, "🔋"))
                         } else {
                             bot.execute(SendMessage(userId, "🪫"))
                         }
                     }
-                    ROCK_GARDEN -> {
+                    ACTIVE -> {
                         if (update.messageText() == "/jump") {
                             frobot.rockGardenMessageId?.let { messageId ->
                                 bot.execute(EditMessageReplyMarkup(userId, messageId).replyMarkup(InlineKeyboardMarkup()))
@@ -95,8 +93,10 @@ fun main() {
                             val (i, j) = update.callbackQuery().data().let { it[0].digitToInt() to it[1].digitToInt() }
                             val message = update.callbackQuery().message()
                             if (frobot.rockGardenBoard().cellAt(i, j) is TreasureMap && frobot.rockGardenBoard().isReachableRock(i, j)) {
+                                frobotRepo.update(frobot.copy(state = OVERHEATED))
                                 bot.execute(SendMessage(userId, "☠️ *OVERHEATED*").parseMode(MarkdownV2))
                                 bot.execute(SendMessage(userId, "☠️ *ALL SYSTEMS DOWN*").parseMode(MarkdownV2))
+                                bot.execute(SendMessage(userId, "🤖 JUNK Robotics: rescue team is on their way"))
                                 bot.execute(SendMessage(userId, "🔵🔵🔴🟢"))
                             } else {
                                 val updatedBoard = frobot.rockGardenBoard().move(i, j)
@@ -124,7 +124,7 @@ fun main() {
                             }
                         }
                     }
-                    OVERHEAT -> {}
+                    OVERHEATED -> {}
                 }
             } catch (e: Exception) {
                 log.error(e) { "Failed to process $update" }

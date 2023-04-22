@@ -1,7 +1,7 @@
 package uk.matvey.frobot
 
-import uk.matvey.frobot.Frobot.BatteryLevel.LOW
 import uk.matvey.frobot.Frobot.Id
+import uk.matvey.frobot.Frobot.State.BATTERY_LOW
 import uk.matvey.persistence.AuditedEntity
 import uk.matvey.persistence.Entity
 import java.time.Instant
@@ -12,7 +12,7 @@ import java.util.UUID.randomUUID
 data class Frobot(
     override val id: Id,
     val userId: Long,
-    val batteryLevel: BatteryLevel,
+    val state: State,
     val rockGardenMessageId: Int?,
     val rockGardenBoard: RockGardenBoard?,
     override val createdAt: Instant,
@@ -21,9 +21,10 @@ data class Frobot(
 
     class Id(override val value: UUID) : Entity.Id<UUID>(value)
 
-    enum class BatteryLevel {
-        LOW,
-        HIGH
+    enum class State {
+        BATTERY_LOW,
+        ACTIVE,
+        OVERHEATED,
     }
 
     fun rockGardenBoard() = requireNotNull(rockGardenBoard)
@@ -33,7 +34,7 @@ data class Frobot(
         fun frobot(userId: Long): Frobot {
             val id = Id(randomUUID())
             val now = now()
-            return Frobot(id, userId, LOW, null, null, now, now)
+            return Frobot(id, userId, BATTERY_LOW, null, null, now, now)
         }
     }
 }
