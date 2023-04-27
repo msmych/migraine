@@ -11,27 +11,17 @@ import com.pengrad.telegrambot.request.SendMessage
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import mu.KotlinLogging
+import uk.matvey.frobot.Constants.INSECTS
+import uk.matvey.frobot.Constants.NULL_POINTER_MESSAGES
 import uk.matvey.frobot.Frobot.Companion.frobot
 import uk.matvey.frobot.Frobot.State.ACTIVE
 import uk.matvey.frobot.Frobot.State.BATTERY_LOW
 import uk.matvey.frobot.Frobot.State.OVERHEATED
 import uk.matvey.frobot.RockGardenCell.TreasureMap
-import uk.matvey.frobot.TelegramBotSupport.messageText
-import uk.matvey.frobot.TelegramBotSupport.user
+import uk.matvey.frobot.TelegramBotUpdateSupport.messageText
+import uk.matvey.frobot.TelegramBotUpdateSupport.user
 import uk.matvey.persistence.JooqRepo
 import java.util.concurrent.ThreadLocalRandom
-
-private val INSECTS = setOf("🦋", "🐝", "🐞", "🐜", "🦟", "🪰")
-private val NULL_POINTER_MESSAGES = setOf(
-    "Null Pointer Disaster",
-    "Null Pointer Catastrophe",
-    "Epic Null Pointer Fail",
-    "Null Pointer Misery",
-    "Null Pointer Trouble",
-    "Null Pointer Death",
-    "Null Pointer Explosion",
-    "Null Pointer Fiasco",
-)
 
 private val log = KotlinLogging.logger {}
 
@@ -55,7 +45,6 @@ fun main() {
 
     bot.setUpdatesListener { updates ->
         updates.forEach { update ->
-            log.info { update }
             try {
                 val userId = update.user().id()
 
@@ -106,10 +95,10 @@ fun main() {
                                         .replyMarkup(updatedBoard.toInlineKeyboard()))
                                     when (updatedBoard.serialize().count { it == 'f' }) {
                                         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 -> null
-                                        12 -> " Huh it's getting kinda hot here"
-                                        28 -> "❗️ Seriously, it's too hot here"
+                                        12 -> " Huh it's getting kind of warm"
+                                        28 -> "❗️ Uff, it's getting too hot"
                                         48 -> "❗️ Man it's hot"
-                                        56 -> "⚠️ Pozor! Language module квакнулся. La localizzazione potrebbe 멈추다"
+                                        56 -> "⚠️ Pozor! Language module квакнулся"
                                         60 -> "‼️️ Danger ‼️ Critical overheat"
                                         62 -> " Oh look! There's a map over there!"
                                         else -> "⚠️ ${NULL_POINTER_MESSAGES.random()}"

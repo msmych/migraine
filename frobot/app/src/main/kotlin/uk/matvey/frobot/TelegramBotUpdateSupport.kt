@@ -3,7 +3,7 @@ package uk.matvey.frobot
 import com.pengrad.telegrambot.model.Update
 import com.pengrad.telegrambot.model.User
 
-object TelegramBotSupport {
+object TelegramBotUpdateSupport {
 
     fun Update.user(): User {
         return if (message() != null) {
