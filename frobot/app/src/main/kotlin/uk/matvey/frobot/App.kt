@@ -85,7 +85,7 @@ fun main() {
                                 frobotRepo.update(frobot.copy(state = OVERHEATED))
                                 bot.execute(SendMessage(userId, "☠️ *OVERHEATED*").parseMode(MarkdownV2))
                                 bot.execute(SendMessage(userId, "☠️ *ALL SYSTEMS DOWN*").parseMode(MarkdownV2))
-                                bot.execute(SendMessage(userId, "🤖 JUNK Robotics: rescue team is on their way"))
+                                bot.execute(SendMessage(userId, "🤖 JUNK Robotics™®©: rescue team is on their way"))
                                 bot.execute(SendMessage(userId, "🔵🔵🔴🟢"))
                             } else {
                                 val updatedBoard = frobot.rockGardenBoard().move(i, j)
@@ -95,16 +95,19 @@ fun main() {
                                         .replyMarkup(updatedBoard.toInlineKeyboard()))
                                     when (updatedBoard.serialize().count { it == 'f' }) {
                                         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 -> null
-                                        12 -> " Huh it's getting kind of warm"
-                                        28 -> "❗️ Uff, it's getting too hot"
-                                        48 -> "❗️ Man it's hot"
-                                        56 -> "⚠️ Pozor! Language module квакнулся"
+                                        12 -> " Hmm, starting to feel a little toasty in here"
+                                        28 -> "❗️ Okay, this is getting seriously hot"
+                                        48 -> "❗️ Oh man, I'm burning up"
+                                        56 -> "\uD83D\uDEA9 Language module квакнулся. 당신은 마주칠 수도 있습니다 alcuni problemi स्थानीयकरण के"
                                         60 -> "‼️️ Danger ‼️ Critical overheat"
                                         62 -> " Oh look! There's a map over there!"
                                         else -> "⚠️ ${NULL_POINTER_MESSAGES.random()}"
                                             .takeIf { ThreadLocalRandom.current().nextInt() % 24 == 0 }
                                     }?.let { logMessage ->
-                                        bot.execute(EditMessageText(userId, message.messageId(), "${message.text()}\n🐸$logMessage".replace("!", "\\!"))
+                                        bot.execute(EditMessageText(
+                                            userId, message.messageId(),
+                                            "${message.text()}\n🐸$logMessage".replace("!", "\\!").replace(".", "\\.")
+                                        )
                                             .replyMarkup(updatedBoard.toInlineKeyboard())
                                             .parseMode(MarkdownV2))
                                     }
