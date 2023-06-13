@@ -11,7 +11,7 @@ import com.pengrad.telegrambot.request.SendMessage
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import mu.KotlinLogging
-import uk.matvey.frobot.Constants.ELECTRIC_PLUG
+import uk.matvey.frobot.Constants.ELECTRICITY
 import uk.matvey.frobot.Constants.INSECTS
 import uk.matvey.frobot.Constants.NULL_POINTER_MESSAGES
 import uk.matvey.frobot.Frobot.Companion.frobot
@@ -56,7 +56,7 @@ fun main() {
                             frobotRepo.update(frobot.copy(state = ACTIVE))
                             bot.execute(SendMessage(userId, "🐸 Yummy!"))
                             bot.execute(SendMessage(userId, "🔋"))
-                        } else if (update.messageText() in ELECTRIC_PLUG) {
+                        } else if (update.messageText() in ELECTRICITY) {
                             bot.execute(SendMessage(userId, "🐸 Not tasty"))
                             bot.execute(SendMessage(userId, "🪫"))
                         } else {
@@ -79,7 +79,7 @@ fun main() {
                                 rrrrrrrr
                                 rrrrrrrr
                             """.trimIndent().replace("\n", ""))
-                            val result = bot.execute(SendMessage(userId, "🐸 What a beautiful rock garden\\!")
+                            val result = bot.execute(SendMessage(userId, "🐸 Wow, what a beautiful rock garden\\!")
                                 .replyMarkup(initialBoard.toInlineKeyboard()).parseMode(MarkdownV2))
                             frobotRepo.update(frobot.copy(rockGardenMessageId = result.message().messageId(), rockGardenBoard = initialBoard))
                         } else if (update.callbackQuery() != null) {
@@ -89,7 +89,7 @@ fun main() {
                                 frobotRepo.update(frobot.copy(state = OVERHEATED))
                                 bot.execute(SendMessage(userId, "☠️ *OVERHEATED*").parseMode(MarkdownV2))
                                 bot.execute(SendMessage(userId, "☠️ *ALL SYSTEMS DOWN*").parseMode(MarkdownV2))
-                                bot.execute(SendMessage(userId, "🤖 JUNK Robotics™®©: rescue team is on their way"))
+                                bot.execute(SendMessage(userId, "🤖 JUNK Robotics™®©: rescue team is on its way"))
                                 bot.execute(SendMessage(userId, "🔵🔵🔴🟢"))
                             } else {
                                 val updatedBoard = frobot.rockGardenBoard().move(i, j)
@@ -102,7 +102,7 @@ fun main() {
                                         12 -> " Hmm, starting to feel a little toasty in here"
                                         28 -> "❗️ Okay, this is getting seriously hot"
                                         48 -> "❗️ Oh man, I'm burning up"
-                                        56 -> "\uD83D\uDEA9 Language module квакнулся. 당신은 마주칠 수도 있습니다 alcuni problemi स्थानीयकरण के"
+                                        56 -> "⚠️ Language module квакнулся. 당신은 마주칠 수도 있습니다 alcuni problemi स्थानीयकरण के"
                                         60 -> "‼️️ Danger ‼️ Critical overheat"
                                         62 -> " Oh look! There's a map over there!"
                                         else -> "⚠️ ${NULL_POINTER_MESSAGES.random()}"
