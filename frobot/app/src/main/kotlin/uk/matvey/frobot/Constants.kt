@@ -4,6 +4,8 @@ object Constants {
 
     val INSECTS = setOf("🦋", "🐝", "🐞", "🐜", "🦟", "🪰")
 
+    val ELECTRIC_PLUG = setOf("🔌", "⚡️")
+
     val NULL_POINTER_MESSAGES = setOf(
         "Null Pointer Disaster",
         "Null Pointer Catastrophe",

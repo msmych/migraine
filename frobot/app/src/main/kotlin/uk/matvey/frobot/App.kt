@@ -11,6 +11,7 @@ import com.pengrad.telegrambot.request.SendMessage
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import mu.KotlinLogging
+import uk.matvey.frobot.Constants.ELECTRIC_PLUG
 import uk.matvey.frobot.Constants.INSECTS
 import uk.matvey.frobot.Constants.NULL_POINTER_MESSAGES
 import uk.matvey.frobot.Frobot.Companion.frobot
@@ -55,6 +56,9 @@ fun main() {
                             frobotRepo.update(frobot.copy(state = ACTIVE))
                             bot.execute(SendMessage(userId, "🐸 Yummy!"))
                             bot.execute(SendMessage(userId, "🔋"))
+                        } else if (update.messageText() in ELECTRIC_PLUG) {
+                            bot.execute(SendMessage(userId, "🐸 Not tasty"))
+                            bot.execute(SendMessage(userId, "🪫"))
                         } else {
                             bot.execute(SendMessage(userId, "🪫"))
                         }
