@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-var templates = template.Must(template.ParseGlob("tmpl/*.html"))
+var templates = template.Must(template.ParseGlob("assets/*.html"))
 
 func main() {
 	profile := os.Getenv("PROFILE")
