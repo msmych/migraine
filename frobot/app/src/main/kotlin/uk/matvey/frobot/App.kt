@@ -8,6 +8,7 @@ import com.pengrad.telegrambot.request.AnswerCallbackQuery
 import com.pengrad.telegrambot.request.EditMessageReplyMarkup
 import com.pengrad.telegrambot.request.EditMessageText
 import com.pengrad.telegrambot.request.SendMessage
+import com.sun.net.httpserver.HttpServer
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import mu.KotlinLogging
@@ -22,6 +23,7 @@ import uk.matvey.frobot.RockGardenCell.TreasureMap
 import uk.matvey.frobot.TelegramBotUpdateSupport.messageText
 import uk.matvey.frobot.TelegramBotUpdateSupport.user
 import uk.matvey.persistence.JooqRepo
+import java.net.InetSocketAddress
 import java.util.concurrent.ThreadLocalRandom
 
 private val log = KotlinLogging.logger {}
@@ -43,6 +45,16 @@ fun main() {
         })
     )
     val frobotRepo = FrobotRepo(jooqRepo)
+
+    log.info { "Starting Frobot server on port 10000" }
+    val server = HttpServer.create(InetSocketAddress(10000), 0)
+    server.createContext("/health") { exchange ->
+        exchange.sendResponseHeaders(200, 0)
+        exchange.responseBody.use { it.write("OK".toByteArray()) }
+    }
+    server.executor = null
+    server.start()
+    log.info { "Frobot server started on port 10000" }
 
     bot.setUpdatesListener { updates ->
         updates.forEach { update ->
@@ -66,10 +78,16 @@ fun main() {
                     ACTIVE -> {
                         if (update.messageText() == "/jump") {
                             frobot.rockGardenMessageId?.let { messageId ->
-                                bot.execute(EditMessageReplyMarkup(userId, messageId).replyMarkup(InlineKeyboardMarkup()))
+                                bot.execute(
+                                    EditMessageReplyMarkup(
+                                        userId,
+                                        messageId
+                                    ).replyMarkup(InlineKeyboardMarkup())
+                                )
                                 bot.execute(EditMessageText(userId, messageId, "🧯"))
                             }
-                            val initialBoard = RockGardenBoard.fromString("""
+                            val initialBoard = RockGardenBoard.fromString(
+                                """
                                 brrrrrrr
                                 rrrrrrrr
                                 rrrrrrrr
@@ -78,14 +96,24 @@ fun main() {
                                 rrrrrrrr
                                 rrrrrrrr
                                 rrrrrrrr
-                            """.trimIndent().replace("\n", ""))
-                            val result = bot.execute(SendMessage(userId, "🐸 Wow, what a beautiful rock garden\\!")
-                                .replyMarkup(initialBoard.toInlineKeyboard()).parseMode(MarkdownV2))
-                            frobotRepo.update(frobot.copy(rockGardenMessageId = result.message().messageId(), rockGardenBoard = initialBoard))
+                            """.trimIndent().replace("\n", "")
+                            )
+                            val result = bot.execute(
+                                SendMessage(userId, "🐸 Wow, what a beautiful rock garden\\!")
+                                    .replyMarkup(initialBoard.toInlineKeyboard()).parseMode(MarkdownV2)
+                            )
+                            frobotRepo.update(
+                                frobot.copy(
+                                    rockGardenMessageId = result.message().messageId(),
+                                    rockGardenBoard = initialBoard
+                                )
+                            )
                         } else if (update.callbackQuery() != null) {
                             val (i, j) = update.callbackQuery().data().let { it[0].digitToInt() to it[1].digitToInt() }
                             val message = update.callbackQuery().message()
-                            if (frobot.rockGardenBoard().cellAt(i, j) is TreasureMap && frobot.rockGardenBoard().isReachableRock(i, j)) {
+                            if (frobot.rockGardenBoard().cellAt(i, j) is TreasureMap && frobot.rockGardenBoard()
+                                    .isReachableRock(i, j)
+                            ) {
                                 frobotRepo.update(frobot.copy(state = OVERHEATED))
                                 bot.execute(SendMessage(userId, "☠️ *OVERHEATED*").parseMode(MarkdownV2))
                                 bot.execute(SendMessage(userId, "☠️ *ALL SYSTEMS DOWN*").parseMode(MarkdownV2))
@@ -95,8 +123,10 @@ fun main() {
                                 val updatedBoard = frobot.rockGardenBoard().move(i, j)
                                 if (updatedBoard != frobot.rockGardenBoard) {
                                     frobotRepo.update(frobot.copy(rockGardenBoard = updatedBoard))
-                                    bot.execute(EditMessageReplyMarkup(userId, message.messageId())
-                                        .replyMarkup(updatedBoard.toInlineKeyboard()))
+                                    bot.execute(
+                                        EditMessageReplyMarkup(userId, message.messageId())
+                                            .replyMarkup(updatedBoard.toInlineKeyboard())
+                                    )
                                     when (updatedBoard.serialize().count { it == 'f' }) {
                                         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 -> null
                                         12 -> " Hmm, starting to feel a little toasty in here"
@@ -108,12 +138,15 @@ fun main() {
                                         else -> "⚠️ ${NULL_POINTER_MESSAGES.random()}"
                                             .takeIf { ThreadLocalRandom.current().nextInt() % 24 == 0 }
                                     }?.let { logMessage ->
-                                        bot.execute(EditMessageText(
-                                            userId, message.messageId(),
-                                            "${message.text()}\n🐸$logMessage".replace("!", "\\!").replace(".", "\\.")
+                                        bot.execute(
+                                            EditMessageText(
+                                                userId, message.messageId(),
+                                                "${message.text()}\n🐸$logMessage".replace("!", "\\!")
+                                                    .replace(".", "\\.")
+                                            )
+                                                .replyMarkup(updatedBoard.toInlineKeyboard())
+                                                .parseMode(MarkdownV2)
                                         )
-                                            .replyMarkup(updatedBoard.toInlineKeyboard())
-                                            .parseMode(MarkdownV2))
                                     }
                                 }
                                 bot.execute(AnswerCallbackQuery(update.callbackQuery().id()))

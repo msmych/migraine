@@ -9,6 +9,7 @@ plugins {
     id("com.palantir.docker-run") version "0.34.0"
     id("org.flywaydb.flyway") version "9.8.1"
     id("nu.studer.jooq") version "8.0"
+    id("com.github.johnrengelman.shadow") version "7.1.2"
     application
 }
 
@@ -58,7 +59,7 @@ flyway {
     url = "jdbc:postgresql://localhost:55000/postgres"
     user = "postgres"
     password = "postgres"
-    schemas = arrayOf("public")
+    schemas = arrayOf("migraine")
     locations = arrayOf("filesystem:${projectDir.absolutePath}/src/main/resources/db/migration")
 }
 
@@ -81,7 +82,7 @@ jooq {
                 }
                 generator.apply {
                     database.apply {
-                        inputSchema = "public"
+                        inputSchema = "migraine"
                         forcedTypes.add(
                             ForcedType().apply {
                                 userType = "java.time.Instant"
