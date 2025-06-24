@@ -1,10 +1,9 @@
 package uk.matvey.frobot
 
-import com.pengrad.telegrambot.model.request.InlineKeyboardButton
-import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup
 import uk.matvey.frobot.RockGardenCell.Frog
 import uk.matvey.frobot.RockGardenCell.Rock
 import uk.matvey.frobot.RockGardenCell.TreasureMap
+import uk.matvey.telek.ReplyMarkup
 
 class RockGardenBoard(private val cells: List<List<RockGardenCell>>) {
 
@@ -45,13 +44,10 @@ class RockGardenBoard(private val cells: List<List<RockGardenCell>>) {
         return cells.joinToString(separator = "") { row -> row.joinToString(separator = "") { it.symbol.toString() } }
     }
 
-    fun toInlineKeyboard(): InlineKeyboardMarkup {
-        return InlineKeyboardMarkup(
-            *cells.mapIndexed { i, row ->
-                row.mapIndexed { j, cell -> InlineKeyboardButton(cell.emoji).callbackData("$i$j") }
-                    .toTypedArray()
-            }.toTypedArray()
-        )
+    fun toInlineKeyboard(): List<List<ReplyMarkup.InlineKeyboardButton>> {
+        return cells.mapIndexed { i, row ->
+            row.mapIndexed { j, cell -> ReplyMarkup.InlineKeyboardButton(cell.emoji, callbackData = "$i$j") }
+        }
     }
 
     companion object {

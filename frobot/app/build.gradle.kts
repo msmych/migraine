@@ -5,7 +5,7 @@ import java.io.IOException
 import java.net.Socket
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.7.10"
+    id("org.jetbrains.kotlin.jvm") version "2.2.0"
     id("com.palantir.docker-run") version "0.34.0"
     id("org.flywaydb.flyway") version "9.8.1"
     id("nu.studer.jooq") version "8.0"
@@ -15,12 +15,19 @@ plugins {
 
 repositories {
     mavenCentral()
+    maven {
+        name = "TelekPackages"
+        url = uri("https://maven.pkg.github.com/msmych/telek")
+        credentials {
+            username = "migraine"
+            password = project.findProperty("ghPackagesRoToken") as? String ?: System.getenv("GH_PACKAGES_RO_TOKEN")
+        }
+    }
 }
 
 val kotlinxSerializationVersion: String by project
 val postgresVersion: String by project
 val hikariCpVersion: String by project
-val telegramBotApiVersion: String by project
 val logbackVersion: String by project
 val kotlinLoggingVersion: String by project
 val jupiterVersion: String by project
@@ -28,17 +35,30 @@ val mockkVersion: String by project
 val assertJVersion: String by project
 
 dependencies {
+    implementation("io.ktor:ktor-server-core:3.2.0")
+    implementation("io.ktor:ktor-server-netty:3.2.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
     implementation("org.postgresql:postgresql:$postgresVersion")
     jooqGenerator("org.postgresql:postgresql:$postgresVersion")
     implementation("com.zaxxer:HikariCP:$hikariCpVersion")
-    implementation("com.github.pengrad:java-telegram-bot-api:$telegramBotApiVersion")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("io.github.microutils:kotlin-logging:$kotlinLoggingVersion")
+    implementation("uk.matvey:telek:0.1.0-RC10")
 
     testImplementation("org.junit.jupiter:junit-jupiter-engine:$jupiterVersion")
     testImplementation("io.mockk:mockk:$mockkVersion")
     testImplementation("org.assertj:assertj-core:$assertJVersion")
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+kotlin {
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
 }
 
 dockerRun {
