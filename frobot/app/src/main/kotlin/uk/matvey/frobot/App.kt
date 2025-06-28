@@ -7,6 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import org.flywaydb.core.Flyway
 import uk.matvey.frobot.Constants.ELECTRICITY
 import uk.matvey.frobot.Constants.INSECTS
 import uk.matvey.frobot.Constants.NULL_POINTER_MESSAGES
@@ -17,6 +18,7 @@ import uk.matvey.frobot.Frobot.State.OVERHEATED
 import uk.matvey.frobot.RockGardenCell.TreasureMap
 import uk.matvey.persistence.JooqRepo
 import uk.matvey.telek.Bot
+import uk.matvey.telek.Message
 import uk.matvey.telek.ParseMode
 import java.net.InetSocketAddress
 import java.util.concurrent.ThreadLocalRandom
@@ -24,21 +26,18 @@ import java.util.concurrent.ThreadLocalRandom
 private val log = KotlinLogging.logger {}
 
 fun main() {
-    val frobotDbUser = System.getenv("FROBOT_DB_USER")
-    val frobotDbPassword = System.getenv("FROBOT_DB_PASSWORD")
-    val frobotDbName = System.getenv("FROBOT_DB_NAME")
-    val frobotDbHost = System.getenv("FROBOT_DB_HOST")
-
     val bot = Bot(System.getenv("FROBOT_TG_BOT_TOKEN"))
 
-    val jooqRepo = JooqRepo(
-        HikariDataSource(HikariConfig().apply {
-            jdbcUrl = "jdbc:postgresql://$frobotDbHost/$frobotDbName"
-            username = frobotDbUser
-            password = frobotDbPassword
-            driverClassName = "org.postgresql.Driver"
-        })
-    )
+    val dataSource = HikariDataSource(HikariConfig().apply {
+        jdbcUrl = System.getenv("FROBOT_DB_URL")
+        username = System.getenv("FROBOT_DB_USERNAME")
+        password = System.getenv("FROBOT_DB_PASSWORD")
+        driverClassName = "org.postgresql.Driver"
+    })
+    Flyway.configure()
+        .dataSource(dataSource)
+        .load()
+    val jooqRepo = JooqRepo(dataSource)
     val frobotRepo = FrobotRepo(jooqRepo)
 
     log.info { "Starting Frobot server on port 10000" }
@@ -75,10 +74,9 @@ fun main() {
                         }
                     }
                     ACTIVE -> {
-                        if (update.message().text == "/jump") {
+                        if (update.message?.text == "/jump") {
                             frobot.rockGardenMessageId?.let { messageId ->
-                                bot.editMessageInlineKeyboard(update.message(), listOf())
-                                bot.editMessage(update.message(), "🧯")
+                                bot.editMessage(Message.Id(update.message().chat.chatId(), messageId), "🧯", listOf())
                             }
                             val initialBoard = RockGardenBoard.fromString(
                                 """
@@ -92,14 +90,19 @@ fun main() {
                             rrrrrrrr
                         """.trimIndent().replace("\n", "")
                             )
-                            val sendMessageResult = bot.sendMessage(userId, "🐸 Wow, what a beautiful rock garden\\!", parseMode = ParseMode.MarkdownV2)
+                            val sendMessageResult = bot.sendMessage(
+                                userId,
+                                "🐸 Wow, what a beautiful rock garden\\!",
+                                parseMode = ParseMode.MarkdownV2,
+                                inlineKeyboard = initialBoard.toInlineKeyboard()
+                            )
                             frobotRepo.update(
                                 frobot.copy(
                                     rockGardenMessageId = sendMessageResult.messageId().messageId,
                                     rockGardenBoard = initialBoard
                                 )
                             )
-                        } else if (update.callbackQuery() != null) {
+                        } else if (update.callbackQuery != null) {
                             val (i, j) = update.callbackQuery().data().let { it[0].digitToInt() to it[1].digitToInt() }
                             val message = update.callbackQuery().message()
                             if (frobot.rockGardenBoard().cellAt(i, j) is TreasureMap && frobot.rockGardenBoard()
@@ -114,7 +117,10 @@ fun main() {
                                 val updatedBoard = frobot.rockGardenBoard().move(i, j)
                                 if (updatedBoard != frobot.rockGardenBoard) {
                                     frobotRepo.update(frobot.copy(rockGardenBoard = updatedBoard))
-                                    bot.editMessageInlineKeyboard(message, updatedBoard.toInlineKeyboard())
+                                    bot.editMessageInlineKeyboard(
+                                        update.callbackQuery().message().messageId(),
+                                        updatedBoard.toInlineKeyboard()
+                                    )
                                     when (updatedBoard.serialize().count { it == 'f' }) {
                                         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 -> null
                                         12 -> " Hmm, starting to feel a little toasty in here"
@@ -126,8 +132,12 @@ fun main() {
                                         else -> "⚠️ ${NULL_POINTER_MESSAGES.random()}"
                                             .takeIf { ThreadLocalRandom.current().nextInt() % 24 == 0 }
                                     }?.let { logMessage ->
-                                        bot.editMessage(message, "${message.text()}\n🐸$logMessage".replace("!", "\\!")
-                                            .replace(".", "\\."), updatedBoard.toInlineKeyboard())
+                                        bot.editMessage(
+                                            update.callbackQuery().message().messageId(),
+                                            "${message.text()}\n🐸$logMessage".replace("!", "\\!")
+                                                .replace(".", "\\."),
+                                            inlineKeyboard = updatedBoard.toInlineKeyboard()
+                                        )
                                     }
                                 }
                                 bot.answerCallbackQuery(update.callbackQuery().id)

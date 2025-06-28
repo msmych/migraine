@@ -43,7 +43,8 @@ dependencies {
     implementation("com.zaxxer:HikariCP:$hikariCpVersion")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("io.github.microutils:kotlin-logging:$kotlinLoggingVersion")
-    implementation("uk.matvey:telek:0.1.0-RC10")
+    implementation("org.flywaydb:flyway-core:11.0.1")
+    implementation("uk.matvey:telek:0.1.0-RC13")
 
     testImplementation("org.junit.jupiter:junit-jupiter-engine:$jupiterVersion")
     testImplementation("io.mockk:mockk:$mockkVersion")
