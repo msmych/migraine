@@ -36,7 +36,9 @@ fun main() {
     })
     Flyway.configure()
         .dataSource(dataSource)
+        .locations("classpath:db/migration")
         .load()
+        .migrate()
     val jooqRepo = JooqRepo(dataSource)
     val frobotRepo = FrobotRepo(jooqRepo)
 

@@ -1,3 +1,4 @@
+import com.github.jengelman.gradle.plugins.shadow.transformers.ServiceFileTransformer
 import org.jooq.meta.jaxb.ForcedType
 import org.jooq.meta.jaxb.Matchers
 import org.jooq.meta.jaxb.MatchersTableType
@@ -9,7 +10,7 @@ plugins {
     id("com.palantir.docker-run") version "0.34.0"
     id("org.flywaydb.flyway") version "9.8.1"
     id("nu.studer.jooq") version "8.0"
-    id("com.github.johnrengelman.shadow") version "7.1.2"
+    id("com.gradleup.shadow") version "8.3.6"
     application
 }
 
@@ -46,14 +47,11 @@ dependencies {
     implementation("org.flywaydb:flyway-core:11.0.1")
     implementation("uk.matvey:telek:0.1.0-RC13")
 
+    runtimeOnly("org.flywaydb:flyway-database-postgresql:11.0.1")
+
     testImplementation("org.junit.jupiter:junit-jupiter-engine:$jupiterVersion")
     testImplementation("io.mockk:mockk:$mockkVersion")
     testImplementation("org.assertj:assertj-core:$assertJVersion")
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
 }
 
 kotlin {
@@ -80,7 +78,6 @@ flyway {
     url = "jdbc:postgresql://localhost:55000/postgres"
     user = "postgres"
     password = "postgres"
-    schemas = arrayOf("migraine")
     locations = arrayOf("filesystem:${projectDir.absolutePath}/src/main/resources/db/migration")
 }
 
@@ -103,7 +100,7 @@ jooq {
                 }
                 generator.apply {
                     database.apply {
-                        inputSchema = "migraine"
+                        inputSchema = "public"
                         forcedTypes.add(
                             ForcedType().apply {
                                 userType = "java.time.Instant"
@@ -160,4 +157,8 @@ tasks.test {
 
 application {
     mainClass.set("uk.matvey.frobot.AppKt")
+}
+
+tasks.shadowJar {
+    transform(ServiceFileTransformer::class.java)
 }
