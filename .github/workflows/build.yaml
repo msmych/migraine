@@ -22,7 +22,8 @@ jobs:
 
       - name: Build fat jar
         run: |
-          frobot/gradlew check app:shadowJar
+          cd frobot
+          ./gradlew check app:shadowJar
 
       - name: Build Docker image
         run: |

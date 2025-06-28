@@ -64,11 +64,11 @@ fun main() {
                 val frobot = frobotRepo.findBy(userId) ?: frobotRepo.add(frobot(userId))
                 when (frobot.state) {
                     BATTERY_LOW -> {
-                        if (update.message().text in INSECTS) {
+                        if (update.message?.text in INSECTS) {
                             frobotRepo.update(frobot.copy(state = ACTIVE))
                             bot.sendMessage(userId, "🐸 Yummy!")
                             bot.sendMessage(userId, "🔋")
-                        } else if (update.message().text in ELECTRICITY) {
+                        } else if (update.message?.text in ELECTRICITY) {
                             bot.sendMessage(userId, "🐸 Not tasty")
                             bot.sendMessage(userId, "🪫")
                         } else {
