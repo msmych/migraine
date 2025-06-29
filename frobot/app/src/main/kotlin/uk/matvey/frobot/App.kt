@@ -26,7 +26,10 @@ import java.util.concurrent.ThreadLocalRandom
 private val log = KotlinLogging.logger {}
 
 fun main() {
-    val bot = Bot(System.getenv("FROBOT_TG_BOT_TOKEN"))
+    val bot = Bot(
+        token = System.getenv("FROBOT_TG_BOT_TOKEN"),
+        defaultParseMode = ParseMode.MarkdownV2,
+    )
 
     val dataSource = HikariDataSource(HikariConfig().apply {
         jdbcUrl = System.getenv("FROBOT_DB_URL")
@@ -78,7 +81,11 @@ fun main() {
                     ACTIVE -> {
                         if (update.message?.text == "/jump") {
                             frobot.rockGardenMessageId?.let { messageId ->
-                                bot.editMessage(Message.Id(update.message().chat.chatId(), messageId), "🧯", listOf())
+                                bot.editMessage(
+                                    Message.Id(update.message().chat.chatId(), messageId),
+                                    "🧯",
+                                    inlineKeyboard = listOf()
+                                )
                             }
                             val initialBoard = RockGardenBoard.fromString(
                                 """
@@ -95,7 +102,6 @@ fun main() {
                             val sendMessageResult = bot.sendMessage(
                                 userId,
                                 "🐸 Wow, what a beautiful rock garden\\!",
-                                parseMode = ParseMode.MarkdownV2,
                                 inlineKeyboard = initialBoard.toInlineKeyboard()
                             )
                             frobotRepo.update(
@@ -111,8 +117,8 @@ fun main() {
                                     .isReachableRock(i, j)
                             ) {
                                 frobotRepo.update(frobot.copy(state = OVERHEATED))
-                                bot.sendMessage(userId, "☠️ *OVERHEATED*", parseMode = ParseMode.MarkdownV2)
-                                bot.sendMessage(userId, "☠️ *ALL SYSTEMS DOWN*", parseMode = ParseMode.MarkdownV2)
+                                bot.sendMessage(userId, "☠️ *OVERHEATED*")
+                                bot.sendMessage(userId, "☠️ *ALL SYSTEMS DOWN*")
                                 bot.sendMessage(userId, "🤖 JUNK Robotics™®©: rescue team is on its way")
                                 bot.sendMessage(userId, "🔵🔵🔴🟢")
                             } else {
@@ -136,8 +142,7 @@ fun main() {
                                     }?.let { logMessage ->
                                         bot.editMessage(
                                             update.callbackQuery().message().messageId(),
-                                            "${message.text()}\n🐸$logMessage".replace("!", "\\!")
-                                                .replace(".", "\\."),
+                                            "${message.text()}\n🐸$logMessage",
                                             inlineKeyboard = updatedBoard.toInlineKeyboard()
                                         )
                                     }

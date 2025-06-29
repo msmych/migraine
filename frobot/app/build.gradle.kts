@@ -6,11 +6,11 @@ import java.io.IOException
 import java.net.Socket
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "2.2.0"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.shadow)
     id("com.palantir.docker-run") version "0.34.0"
     id("org.flywaydb.flyway") version "9.8.1"
     id("nu.studer.jooq") version "8.0"
-    id("com.gradleup.shadow") version "8.3.6"
     application
 }
 
@@ -26,30 +26,29 @@ repositories {
     }
 }
 
-val kotlinxSerializationVersion: String by project
 val postgresVersion: String by project
 val hikariCpVersion: String by project
 val logbackVersion: String by project
 val kotlinLoggingVersion: String by project
-val jupiterVersion: String by project
 val mockkVersion: String by project
 val assertJVersion: String by project
 
 dependencies {
-    implementation("io.ktor:ktor-server-core:3.2.0")
-    implementation("io.ktor:ktor-server-netty:3.2.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion")
+    implementation(libs.bundles.ktor)
+    implementation(libs.kotlinx.serialization.json)
     implementation("org.postgresql:postgresql:$postgresVersion")
     jooqGenerator("org.postgresql:postgresql:$postgresVersion")
     implementation("com.zaxxer:HikariCP:$hikariCpVersion")
     implementation("ch.qos.logback:logback-classic:$logbackVersion")
     implementation("io.github.microutils:kotlin-logging:$kotlinLoggingVersion")
-    implementation("org.flywaydb:flyway-core:11.0.1")
-    implementation("uk.matvey:telek:0.1.0-RC13")
+    implementation(libs.flyway.core)
+    implementation(libs.telek)
 
     runtimeOnly("org.flywaydb:flyway-database-postgresql:11.0.1")
 
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:$jupiterVersion")
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation("io.mockk:mockk:$mockkVersion")
     testImplementation("org.assertj:assertj-core:$assertJVersion")
 }
