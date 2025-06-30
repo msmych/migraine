@@ -2,15 +2,14 @@ package uk.matvey.frobot
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.flywaydb.core.Flyway
 import uk.matvey.frobot.Constants.ELECTRICITY
@@ -47,7 +46,7 @@ fun main() {
 
     startServer()
 
-    CoroutineScope(Dispatchers.IO).launch {
+    runBlocking {
         bot.start { update ->
             try {
                 val userId = if (update.message != null) {
@@ -155,7 +154,7 @@ private fun startServer() {
         routing {
             route("/health") {
                 get {
-                    call.respond("\uD83D\uDC38 Frobot is alive and kicking!")
+                    call.respond(OK, "\uD83D\uDC38 Frobot is alive and kicking!")
                 }
             }
         }

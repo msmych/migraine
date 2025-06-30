@@ -30,12 +30,11 @@ val postgresVersion: String by project
 val hikariCpVersion: String by project
 val logbackVersion: String by project
 val kotlinLoggingVersion: String by project
-val mockkVersion: String by project
-val assertJVersion: String by project
 
 dependencies {
     implementation(libs.bundles.ktor)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.jasync.postgresql)
     implementation("org.postgresql:postgresql:$postgresVersion")
     jooqGenerator("org.postgresql:postgresql:$postgresVersion")
     implementation("com.zaxxer:HikariCP:$hikariCpVersion")
