@@ -44,13 +44,13 @@ dependencies {
     implementation(libs.flyway.core)
     implementation(libs.telek)
 
-    runtimeOnly("org.flywaydb:flyway-database-postgresql:11.0.1")
+    runtimeOnly(libs.flyway.database.postgresql)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
-    testImplementation("io.mockk:mockk:$mockkVersion")
-    testImplementation("org.assertj:assertj-core:$assertJVersion")
+    testImplementation(libs.mockk)
+    testImplementation(libs.assertj.core)
 }
 
 kotlin {

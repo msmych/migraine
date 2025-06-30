@@ -1,6 +1,7 @@
 [versions]
 kotlin = "2.2.0"
 ktor = "3.2.0"
+flyway = "11.0.1"
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
@@ -11,10 +12,13 @@ ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.8.1" }
 telek = { module = "uk.matvey:telek", version = "0.1.0-RC14" }
-flyway-core = { module = "org.flywaydb:flyway-core", version = "11.0.1" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
 junit-bom = { module = "org.junit:junit-bom", version = "5.13.2" }
-junit-jupiter = { module = "org.junit.jupiter:junit-jupiter"  }
-junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher"  }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+assertj-core = { module = "org.assertj:assertj-core", version = "3.11.1" }
+mockk = { module = "io.mockk:mockk", version = "1.13.3" }
 
 [bundles]
 ktor = [

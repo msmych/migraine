@@ -15,7 +15,8 @@ class RockGardenBoard(private val cells: List<List<RockGardenCell>>) {
         return if (isReachableRock(i, j)) {
             val arr = fromString(this.serialize().replace('b', 'f')).cells.map { it.toTypedArray() }.toTypedArray()
             arr[i][j] = Frog
-            val updated = arr.joinToString(separator = "") { row -> row.joinToString(separator = "") { it.symbol.toString() } }
+            val updated =
+                arr.joinToString(separator = "") { row -> row.joinToString(separator = "") { it.symbol.toString() } }
             return fromString(if (updated.count { it == 'r' } == 1) updated.replace('r', 'm') else updated)
         } else {
             this
@@ -51,6 +52,19 @@ class RockGardenBoard(private val cells: List<List<RockGardenCell>>) {
     }
 
     companion object {
+
+        fun initial() = fromString(
+            """
+                            brrrrrrr
+                            rrrrrrrr
+                            rrrrrrrr
+                            rrrrrrrr
+                            rrrrrrrr
+                            rrrrrrrr
+                            rrrrrrrr
+                            rrrrrrrr
+                        """.trimIndent().replace("\n", "")
+        )
 
         fun fromString(s: String): RockGardenBoard {
             return RockGardenBoard(

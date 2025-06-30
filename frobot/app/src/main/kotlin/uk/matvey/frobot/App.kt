@@ -1,8 +1,13 @@
 package uk.matvey.frobot
 
-import com.sun.net.httpserver.HttpServer
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
+import io.ktor.server.response.respond
+import io.ktor.server.routing.get
+import io.ktor.server.routing.route
+import io.ktor.server.routing.routing
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -20,7 +25,6 @@ import uk.matvey.persistence.JooqRepo
 import uk.matvey.telek.Bot
 import uk.matvey.telek.Message
 import uk.matvey.telek.ParseMode
-import java.net.InetSocketAddress
 import java.util.concurrent.ThreadLocalRandom
 
 private val log = KotlinLogging.logger {}
@@ -37,23 +41,11 @@ fun main() {
         password = System.getenv("FROBOT_DB_PASSWORD")
         driverClassName = "org.postgresql.Driver"
     })
-    Flyway.configure()
-        .dataSource(dataSource)
-        .locations("classpath:db/migration")
-        .load()
-        .migrate()
+    migrateFlyway(dataSource)
     val jooqRepo = JooqRepo(dataSource)
     val frobotRepo = FrobotRepo(jooqRepo)
 
-    log.info { "Starting Frobot server on port 10000" }
-    val server = HttpServer.create(InetSocketAddress(10000), 0)
-    server.createContext("/health") { exchange ->
-        exchange.sendResponseHeaders(200, 0)
-        exchange.responseBody.use { it.write("OK".toByteArray()) }
-    }
-    server.executor = null
-    server.start()
-    log.info { "Frobot server started on port 10000" }
+    startServer()
 
     CoroutineScope(Dispatchers.IO).launch {
         bot.start { update ->
@@ -87,21 +79,10 @@ fun main() {
                                     inlineKeyboard = listOf()
                                 )
                             }
-                            val initialBoard = RockGardenBoard.fromString(
-                                """
-                            brrrrrrr
-                            rrrrrrrr
-                            rrrrrrrr
-                            rrrrrrrr
-                            rrrrrrrr
-                            rrrrrrrr
-                            rrrrrrrr
-                            rrrrrrrr
-                        """.trimIndent().replace("\n", "")
-                            )
+                            val initialBoard = RockGardenBoard.initial()
                             val sendMessageResult = bot.sendMessage(
                                 userId,
-                                "🐸 Wow, what a beautiful rock garden\\!",
+                                "🐸 Wow, what a beautiful rock garden!",
                                 inlineKeyboard = initialBoard.toInlineKeyboard()
                             )
                             frobotRepo.update(
@@ -158,4 +139,28 @@ fun main() {
             }
         }
     }
+}
+
+private fun migrateFlyway(dataSource: HikariDataSource) {
+    Flyway.configure()
+        .dataSource(dataSource)
+        .locations("classpath:db/migration")
+        .load()
+        .migrate()
+}
+
+private fun startServer() {
+    log.info { "Starting Frobot server on port 10000" }
+    embeddedServer(factory = Netty, port = 10000) {
+        routing {
+            route("/health") {
+                get {
+                    call.respond("\uD83D\uDC38 Frobot is alive and kicking!")
+                }
+            }
+        }
+    }.start(
+        wait = false
+    )
+    log.info { "Frobot server started on port 10000" }
 }
