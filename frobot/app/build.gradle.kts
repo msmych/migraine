@@ -1,16 +1,9 @@
+
 import com.github.jengelman.gradle.plugins.shadow.transformers.ServiceFileTransformer
-import org.jooq.meta.jaxb.ForcedType
-import org.jooq.meta.jaxb.Matchers
-import org.jooq.meta.jaxb.MatchersTableType
-import java.io.IOException
-import java.net.Socket
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.shadow)
-    id("com.palantir.docker-run") version "0.34.0"
-    id("org.flywaydb.flyway") version "9.8.1"
-    id("nu.studer.jooq") version "8.0"
     application
 }
 
@@ -26,23 +19,16 @@ repositories {
     }
 }
 
-val postgresVersion: String by project
-val hikariCpVersion: String by project
-val logbackVersion: String by project
-val kotlinLoggingVersion: String by project
-
 dependencies {
     implementation(libs.bundles.ktor)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.jasync.postgresql)
-    implementation("org.postgresql:postgresql:$postgresVersion")
-    jooqGenerator("org.postgresql:postgresql:$postgresVersion")
-    implementation("com.zaxxer:HikariCP:$hikariCpVersion")
-    implementation("ch.qos.logback:logback-classic:$logbackVersion")
-    implementation("io.github.microutils:kotlin-logging:$kotlinLoggingVersion")
+    implementation(libs.logback.classic)
+    implementation(libs.kotlin.logging)
     implementation(libs.flyway.core)
     implementation(libs.telek)
 
+    runtimeOnly(libs.postgresql)
     runtimeOnly(libs.flyway.database.postgresql)
 
     testImplementation(platform(libs.junit.bom))
@@ -56,97 +42,6 @@ kotlin {
     jvmToolchain {
         languageVersion.set(JavaLanguageVersion.of(17))
     }
-}
-
-dockerRun {
-    name = "frobot-pg"
-    image = "postgres:latest"
-    ports("55000:5432")
-    daemonize = true
-    env(mapOf("POSTGRES_USER" to "postgres", "POSTGRES_PASSWORD" to "postgres", "POSTGRES_DB" to "postgres"))
-}
-
-tasks.dockerRun {
-    onlyIf {
-        !portIsInUse(55000)
-    }
-}
-
-flyway {
-    url = "jdbc:postgresql://localhost:55000/postgres"
-    user = "postgres"
-    password = "postgres"
-    locations = arrayOf("filesystem:${projectDir.absolutePath}/src/main/resources/db/migration")
-}
-
-tasks.flywayMigrate {
-    dependsOn("dockerRun")
-    doFirst {
-        Thread.sleep(2000)
-    }
-}
-
-jooq {
-    configurations {
-        create("main") {
-            jooqConfiguration.apply {
-                jdbc.apply {
-                    driver = "org.postgresql.Driver"
-                    url = "jdbc:postgresql://localhost:55000/postgres"
-                    user = "postgres"
-                    password = "postgres"
-                }
-                generator.apply {
-                    database.apply {
-                        inputSchema = "public"
-                        forcedTypes.add(
-                            ForcedType().apply {
-                                userType = "java.time.Instant"
-                                converter = "uk.matvey.persistence.InstantConverter"
-                                includeExpression = ".*.CREATED_AT|.*.UPDATED_AT"
-                            }
-                        )
-                    }
-                    strategy.apply {
-                        matchers = Matchers().withTables(
-                            MatchersTableType()
-                                .withRecordImplements("uk.matvey.persistence.AuditedEntityRecord<UUID, FrobotRecord>")
-                                .withExpression("frobot")
-                        )
-                    }
-                    generate.apply {
-                        isFluentSetters = true
-                        isJavaTimeTypes = false
-                    }
-                }
-            }
-        }
-    }
-}
-
-tasks.getByName("generateJooq") {
-    dependsOn("flywayMigrate")
-}
-
-tasks.dockerStop {
-    onlyIf {
-        portIsInUse(55000)
-    }
-}
-
-tasks.dockerRemoveContainer {
-    dependsOn("dockerStop")
-}
-
-tasks.clean {
-    dependsOn("dockerRemoveContainer")
-}
-
-fun portIsInUse(port: Int) = try {
-    Socket("localhost", port).close()
-    true
-} catch (e: IOException) {
-    false
 }
 
 tasks.test {

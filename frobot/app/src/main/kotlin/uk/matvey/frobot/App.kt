@@ -1,7 +1,7 @@
 package uk.matvey.frobot
 
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
+import com.github.jasync.sql.db.asSuspending
+import com.github.jasync.sql.db.postgresql.PostgreSQLConnectionBuilder.createConnectionPool
 import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
@@ -11,7 +11,7 @@ import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import org.flywaydb.core.Flyway
+import org.flywaydb.core.Flyway.configure
 import uk.matvey.frobot.Constants.ELECTRICITY
 import uk.matvey.frobot.Constants.INSECTS
 import uk.matvey.frobot.Constants.NULL_POINTER_MESSAGES
@@ -20,10 +20,10 @@ import uk.matvey.frobot.Frobot.State.ACTIVE
 import uk.matvey.frobot.Frobot.State.BATTERY_LOW
 import uk.matvey.frobot.Frobot.State.OVERHEATED
 import uk.matvey.frobot.RockGardenCell.TreasureMap
-import uk.matvey.persistence.JooqRepo
 import uk.matvey.telek.Bot
 import uk.matvey.telek.Message
 import uk.matvey.telek.ParseMode
+import uk.matvey.telek.RequestException
 import java.util.concurrent.ThreadLocalRandom
 
 private val log = KotlinLogging.logger {}
@@ -34,15 +34,22 @@ fun main() {
         defaultParseMode = ParseMode.MarkdownV2,
     )
 
-    val dataSource = HikariDataSource(HikariConfig().apply {
-        jdbcUrl = System.getenv("FROBOT_DB_URL")
-        username = System.getenv("FROBOT_DB_USERNAME")
-        password = System.getenv("FROBOT_DB_PASSWORD")
-        driverClassName = "org.postgresql.Driver"
-    })
-    migrateFlyway(dataSource)
-    val jooqRepo = JooqRepo(dataSource)
-    val frobotRepo = FrobotRepo(jooqRepo)
+    val dbUrl = System.getenv("FROBOT_DB_URL")
+    val dbUsername = System.getenv("FROBOT_DB_USERNAME")
+    val dbPassword = System.getenv("FROBOT_DB_PASSWORD")
+    val db = createConnectionPool(
+        dbUrl
+    ) {
+        username = dbUsername
+        password = dbPassword
+    }.asSuspending
+    configure()
+        .dataSource(dbUrl, dbUsername, dbPassword)
+        .locations("classpath:db/migration")
+        .load()
+        .migrate()
+    val frobotRepository = FrobotRepository(db)
+
 
     startServer()
 
@@ -55,11 +62,11 @@ fun main() {
                     update.callbackQuery().from.id
                 }
 
-                val frobot = frobotRepo.findBy(userId) ?: frobotRepo.add(frobot(userId))
+                val frobot = frobotRepository.findByUserId(userId) ?: frobotRepository.add(frobot(userId))
                 when (frobot.state) {
                     BATTERY_LOW -> {
                         if (update.message?.text in INSECTS) {
-                            frobotRepo.update(frobot.copy(state = ACTIVE))
+                            frobotRepository.update(frobot.id, state = ACTIVE)
                             bot.sendMessage(userId, "🐸 Yummy!")
                             bot.sendMessage(userId, "🔋")
                         } else if (update.message?.text in ELECTRICITY) {
@@ -72,11 +79,21 @@ fun main() {
                     ACTIVE -> {
                         if (update.message?.text == "/jump") {
                             frobot.rockGardenMessageId?.let { messageId ->
-                                bot.editMessage(
-                                    Message.Id(update.message().chat.chatId(), messageId),
-                                    "🧯",
-                                    inlineKeyboard = listOf()
-                                )
+                                try {
+                                    bot.editMessage(
+                                        messageId = Message.Id(update.message().chat.chatId(), messageId),
+                                        text = "🧯",
+                                        inlineKeyboard = listOf()
+                                    )
+                                } catch (e: RequestException) {
+                                    if (e.message !in setOf(
+                                            MESSAGE_TO_EDIT_NOT_FOUND,
+                                            MESSAGE_IS_NOT_MODIFIED_EXCEPTION
+                                        )
+                                    ) {
+                                        throw e
+                                    }
+                                }
                             }
                             val initialBoard = RockGardenBoard.initial()
                             val sendMessageResult = bot.sendMessage(
@@ -84,11 +101,10 @@ fun main() {
                                 "🐸 Wow, what a beautiful rock garden!",
                                 inlineKeyboard = initialBoard.toInlineKeyboard()
                             )
-                            frobotRepo.update(
-                                frobot.copy(
-                                    rockGardenMessageId = sendMessageResult.messageId().messageId,
-                                    rockGardenBoard = initialBoard
-                                )
+                            frobotRepository.update(
+                                id = frobot.id,
+                                rockGardenMessageId = sendMessageResult.messageId().messageId,
+                                rockGardenBoard = initialBoard
                             )
                         } else if (update.callbackQuery != null) {
                             val (i, j) = update.callbackQuery().data().let { it[0].digitToInt() to it[1].digitToInt() }
@@ -96,7 +112,7 @@ fun main() {
                             if (frobot.rockGardenBoard().cellAt(i, j) is TreasureMap && frobot.rockGardenBoard()
                                     .isReachableRock(i, j)
                             ) {
-                                frobotRepo.update(frobot.copy(state = OVERHEATED))
+                                frobotRepository.update(frobot.id, state = OVERHEATED)
                                 bot.sendMessage(userId, "☠️ *OVERHEATED*")
                                 bot.sendMessage(userId, "☠️ *ALL SYSTEMS DOWN*")
                                 bot.sendMessage(userId, "🤖 JUNK Robotics™®©: rescue team is on its way")
@@ -104,7 +120,7 @@ fun main() {
                             } else {
                                 val updatedBoard = frobot.rockGardenBoard().move(i, j)
                                 if (updatedBoard != frobot.rockGardenBoard) {
-                                    frobotRepo.update(frobot.copy(rockGardenBoard = updatedBoard))
+                                    frobotRepository.update(frobot.id, rockGardenBoard = updatedBoard)
                                     bot.editMessageInlineKeyboard(
                                         update.callbackQuery().message().messageId(),
                                         updatedBoard.toInlineKeyboard()
@@ -140,14 +156,6 @@ fun main() {
     }
 }
 
-private fun migrateFlyway(dataSource: HikariDataSource) {
-    Flyway.configure()
-        .dataSource(dataSource)
-        .locations("classpath:db/migration")
-        .load()
-        .migrate()
-}
-
 private fun startServer() {
     log.info { "Starting Frobot server on port 10000" }
     embeddedServer(factory = Netty, port = 10000) {
@@ -163,3 +171,8 @@ private fun startServer() {
     )
     log.info { "Frobot server started on port 10000" }
 }
+
+private const val MESSAGE_TO_EDIT_NOT_FOUND = "Bad Request: message to edit not found"
+private const val MESSAGE_IS_NOT_MODIFIED_EXCEPTION =
+    "Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message"
+

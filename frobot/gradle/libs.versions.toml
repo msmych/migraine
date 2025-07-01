@@ -15,6 +15,10 @@ telek = { module = "uk.matvey:telek", version = "0.1.0-RC14" }
 flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
 flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
 jasync-postgresql = { module = "com.github.jasync-sql:jasync-postgresql", version = "2.2.4" }
+postgresql = { module = "org.postgresql:postgresql", version = "42.5.1" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.4.6" }
+kotlin-logging = { module = "io.github.microutils:kotlin-logging", version = "3.0.5" }
+
 junit-bom = { module = "org.junit:junit-bom", version = "5.13.2" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
